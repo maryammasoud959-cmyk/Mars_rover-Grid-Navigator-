@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Rover: Grid Navigator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0b0d17;
+            color: #e2e8f0;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .mars-glass {
+            background: rgba(26, 15, 28, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            box-shadow: 0 0 25px rgba(220, 38, 38, 0.2);
+        }
+        .mars-button {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+        .mars-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.6);
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        }
+        .mars-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(248, 113, 113, 0.7);
+        }
+        .glow-cyan {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.7);
+        }
+        .modal-active {
+            animation: popIn 0.2s ease-out forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- TOP NAV / HEADER -->
+    <header class="w-full bg-slate-950/90 border-b border-red-900/50 p-3 sm:p-4 sticky top-0 z-30 shadow-xl">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                <i class="fa-solid font-bold text-red-500 text-xl sm:text-2xl fa-robot animate-pulse"></i>
+                <h1 class="font-orbitron font-black text-lg sm:text-2xl tracking-wider text-red-500 glow-text">
+                    <span id="ui-title">MARS ROVER</span> <span id="ui-subtitle" class="text-white text-sm font-normal hidden sm:inline">| GRID NAVIGATOR</span>
+                </h1>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 sm:gap-4 rtl:space-x-reverse">
+                <!-- Language Selector -->
+                <div class="flex items-center space-x-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 rtl:space-x-reverse">
+                    <i class="fa-solid fa-globe text-slate-400 text-xs"></i>
+                    <select id="lang-select" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-semibold text-cyan-400 focus:outline-none cursor-pointer">
+                        <option value="en" class="bg-slate-900 text-white">English</option>
+                        <option value="es" class="bg-slate-900 text-white">Español</option>
+                        <option value="ar" class="bg-slate-900 text-white">العربية</option>
+                    </select>
+                </div>
+
+                <!-- Rover Skin Selector -->
+                <div class="flex items-center space-x-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 rtl:space-x-reverse">
+                    <i class="fa-solid fa-paint-brush text-slate-400 text-xs"></i>
+                    <select id="skin-select" onchange="changeSkin(this.value)" class="bg-transparent text-xs font-semibold text-amber-400 focus:outline-none cursor-pointer">
+                        <option value="curiosity" class="bg-slate-900 text-white">Red Curiosity</option>
+                        <option value="cyber" class="bg-slate-900 text-white">Cyber Gold</option>
+                        <option value="neon" class="bg-slate-900 text-white">Neon Mint</option>
+                        <option value="shadow" class="bg-slate-900 text-white">Shadow Black</option>
+                        <option value="purple" class="bg-slate-900 text-white">Cosmic Purple</option>
+                    </select>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="flex items-center space-x-3 bg-slate-900/90 px-3 py-1 rounded-xl border border-red-900/40 rtl:space-x-reverse">
+                    <div class="text-center">
+                        <div id="lbl-sector" class="text-[9px] text-slate-400 font-semibold tracking-wider">SECTOR</div>
+                        <div id="ui-level" class="font-orbitron font-bold text-cyan-400 text-xs sm:text-sm">1 / 3</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="lbl-crystals" class="text-[9px] text-slate-400 font-semibold tracking-wider">CRYSTALS</div>
+                        <div id="ui-score" class="font-orbitron font-bold text-amber-400 text-xs sm:text-sm">0 / 4</div>
+                    </div>
+                    <div class="text-center w-16 sm:w-20">
+                        <div class="flex justify-between text-[9px] text-slate-400 font-semibold mb-0.5">
+                            <span id="lbl-battery">BATTERY</span>
+                            <span id="ui-battery-text">100%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 border border-slate-700 overflow-hidden">
+                            <div id="ui-battery-bar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full w-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="max-w-6xl w-full mx-auto p-3 sm:p-4 flex-grow flex flex-col lg:flex-row gap-4 sm:gap-6 items-center lg:items-start justify-center">
+
+        <!-- LEFT: CANVAS BOARD -->
+        <div class="w-full lg:w-2/3 flex flex-col items-center">
+            <div class="relative w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden mars-glass p-2">
+                <canvas id="gridCanvas" class="w-full h-full rounded-xl cursor-pointer bg-slate-950"></canvas>
+                
+                <div id="sector-title-badge" class="absolute top-4 left-4 rtl:left-auto rtl:right-4 bg-slate-900/90 border border-red-500/40 px-3 py-1 rounded-lg text-xs font-orbitron text-red-400 shadow-md">
+                    Mission 1: Coordinate Navigation
+                </div>
+            </div>
+
+            <!-- Quadrant Reference Helper -->
+            <div class="w-full max-w-[500px] mt-2 flex justify-between text-[11px] sm:text-xs text-slate-400 px-2 font-mono dir-ltr">
+                <span class="text-slate-400">Q2 (-X, +Y)</span>
+                <span class="text-slate-400">Q1 (+X, +Y)</span>
+                <span class="text-red-400 font-bold">ORIGIN (0,0)</span>
+                <span class="text-slate-400">Q3 (-X, -Y)</span>
+                <span class="text-slate-400">Q4 (+X, -Y)</span>
+            </div>
+        </div>
+
+        <!-- RIGHT: CONTROLS & OBJECTIVES -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-4 max-w-[500px]">
+
+            <!-- Navigation Controls Card -->
+            <div class="mars-glass p-4 rounded-2xl flex flex-col gap-3">
+                <h2 class="font-orbitron font-bold text-base text-red-400 border-b border-red-900/40 pb-2 flex items-center justify-between">
+                    <span id="lbl-nav-title">ROVER NAVIGATION</span>
+                    <i class="fa-solid fa-gamepad"></i>
+                </h2>
+
+                <!-- Current Position -->
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <span id="lbl-curr-pos" class="text-xs text-slate-400">Current Position:</span>
+                    <span id="ui-rover-pos" class="font-orbitron font-bold text-lg text-cyan-400 glow-cyan">(0, 0)</span>
+                </div>
+
+                <!-- Directional D-Pad -->
+                <div class="grid grid-cols-3 gap-2 w-44 mx-auto my-1 dir-ltr">
+                    <div></div>
+                    <button id="btn-up" onclick="moveRover(0, 1)" class="mars-button p-3 rounded-xl text-white font-bold flex items-center justify-center text-base active:scale-95" title="Move Up (W / Up Arrow)">
+                        <i class="fa-solid fa-chevron-up"></i>
+                    </button>
+                    <div></div>
+                    <button id="btn-left" onclick="moveRover(-1, 0)" class="mars-button p-3 rounded-xl text-white font-bold flex items-center justify-center text-base active:scale-95" title="Move Left (A / Left Arrow)">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="flex items-center justify-center text-slate-600">
+                        <i class="fa-solid fa-crosshairs text-base"></i>
+                    </div>
+                    <button id="btn-right" onclick="moveRover(1, 0)" class="mars-button p-3 rounded-xl text-white font-bold flex items-center justify-center text-base active:scale-95" title="Move Right (D / Right Arrow)">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <div></div>
+                    <button id="btn-down" onclick="moveRover(0, -1)" class="mars-button p-3 rounded-xl text-white font-bold flex items-center justify-center text-base active:scale-95" title="Move Down (S / Down Arrow)">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div></div>
+                </div>
+
+                <!-- Coordinate Jump Input -->
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                    <label id="lbl-direct-input" class="text-[11px] text-slate-400 block mb-1.5 font-semibold">COORDINATE DIRECT INPUT (X, Y):</label>
+                    <div class="flex gap-2 dir-ltr">
+                        <input type="number" id="input-x" min="-5" max="5" placeholder="X" class="w-1/3 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-center text-cyan-400 font-orbitron font-bold text-xs focus:outline-none focus:border-red-500">
+                        <input type="number" id="input-y" min="-5" max="5" placeholder="Y" class="w-1/3 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-center text-cyan-400 font-orbitron font-bold text-xs focus:outline-none focus:border-red-500">
+                        <button id="btn-execute" onclick="handleCoordinateInput()" class="w-1/3 mars-button rounded-lg font-orbitron text-[11px] font-bold py-1.5">
+                            EXECUTE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objective & Instructions Box -->
+            <div class="mars-glass p-3.5 rounded-2xl flex flex-col gap-2">
+                <h3 id="lbl-objective-title" class="font-orbitron text-xs font-bold text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-cyan-400"></i> MISSION OBJECTIVE
+                </h3>
+                <p id="ui-mission-desc" class="text-xs text-slate-300 leading-relaxed">
+                    Navigate the Mars Rover across the 4-quadrant coordinate grid. Collect all rare Kyber crystals. Collectables will trigger Math Security Locks!
+                </p>
+                <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-[11px] text-slate-400">
+                    <div id="lbl-how-to-play" class="font-bold text-red-400 mb-0.5">🎮 HOW TO PLAY:</div>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        <li id="rule-1">Use D-Pad, WASD, or Arrow Keys to step 1 grid unit.</li>
+                        <li id="rule-2">Reach yellow crystals (💎) to solve 7th-grade STEM math locks.</li>
+                        <li id="rule-3">Avoid red crater hazards (🌋) or solve lock to escape.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="ui-footer" class="w-full text-center py-2 text-[11px] text-slate-500 border-t border-slate-900">
+        Mars Rover: Grid Navigator &copy; 7th Grade STEM Math Learning Game
+    </footer>
+
+    <!-- MATH CHALLENGE MODAL -->
+    <div id="math-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 hidden p-4">
+        <div id="math-modal-card" class="mars-glass max-w-md w-full rounded-2xl p-5 border-2 border-red-500/60 shadow-2xl modal-active">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+                <div class="flex items-center gap-2 text-amber-400 font-orbitron font-bold text-sm">
+                    <i class="fa-solid fa-lock text-base animate-bounce"></i>
+                    <span id="modal-title">MATH LOCK ACTIVATED</span>
+                </div>
+                <span id="modal-badge" class="bg-red-950 text-red-400 text-[10px] px-2 py-0.5 rounded border border-red-800 font-mono">LEVEL 1</span>
+            </div>
+
+            <div class="mb-4">
+                <p id="modal-question" class="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed mb-2.5">
+                    Question text goes here...
+                </p>
+                <div id="modal-visual-aid" class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 text-center text-xs font-mono text-cyan-300 hidden">
+                </div>
+            </div>
+
+            <div id="modal-options" class="grid grid-cols-1 gap-2">
+            </div>
+
+            <div id="modal-feedback" class="mt-3 text-center text-xs font-bold hidden py-1.5 rounded-lg"></div>
+        </div>
+    </div>
+
+    <!-- LEVEL COMPLETE / GAME OVER MODAL -->
+    <div id="end-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-50 hidden p-4">
+        <div class="mars-glass max-w-md w-full rounded-2xl p-6 text-center border-2 border-cyan-500/50 shadow-2xl modal-active">
+            <div id="end-icon" class="text-4xl text-amber-400 mb-2">
+                <i class="fa-solid fa-trophy animate-pulse"></i>
+            </div>
+            <h2 id="end-title" class="font-orbitron font-black text-xl text-white mb-2">MISSION ACCOMPLISHED!</h2>
+            <p id="end-desc" class="text-xs text-slate-300 mb-5">You successfully navigated Sector 1 and collected all energy crystals!</p>
+            
+            <button id="end-btn" onclick="handleEndAction()" class="mars-button px-6 py-2.5 rounded-xl font-orbitron font-bold text-white text-xs w-full">
+                NEXT SECTOR <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- AUDIO & GAME SCRIPT -->
+    <script>
+        /* WEB AUDIO SYNTHESIZER */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                try {
+                    if (!this.ctx) {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                } catch(e) {}
+            }
+            playMove() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.08);
+                } catch(e) {}
+            }
+            playCrystal() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+                    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.25);
+                } catch(e) {}
+            }
+            playSuccess() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.22);
+                } catch(e) {}
+            }
+            playError() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.18);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.18);
+                } catch(e) {}
+            }
+        }
+        const sfx = new SoundFX();
+
+        /* GAME SKINS & INTERNATIONALIZATION */
+        const roverSkins = {
+            curiosity: { name: 'Red Curiosity', primary: '#0891b2', secondary: '#22d3ee', glow: 'rgba(34, 211, 238, 0.6)', icon: '\uf53f' },
+            cyber: { name: 'Cyber Gold', primary: '#d97706', secondary: '#fbbf24', glow: 'rgba(251, 191, 36, 0.6)', icon: '\uf544' },
+            neon: { name: 'Neon Mint', primary: '#059669', secondary: '#34d399', glow: 'rgba(52, 211, 153, 0.6)', icon: '\uf544' },
+            shadow: { name: 'Shadow Black', primary: '#334
